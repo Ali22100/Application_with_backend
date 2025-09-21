@@ -1,11 +1,13 @@
 import express from "express";
 import mongoose from "mongoose";
-import { Todo } from "./model/userSchema.js";// yahan import
+import { Todo } from "./model/userSchema.js";
+import cors from "cors";
 
 const app = express();
 const PORT = 5000;
 
 app.use(express.json());
+app.use(cors());
 
 // MongoDB Connection
 const MONGODB_URI = "mongodb+srv://todo:todo@cluster0.qnzvjav.mongodb.net/";
