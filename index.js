@@ -1,54 +1,97 @@
 import express from "express";
 import mongoose from "mongoose";
-import { Todo } from "./model/userSchema.js";
-import cors from "cors";
+import { User } from "./model/userSchema.js";
 
 const app = express();
 const PORT = 5000;
 
 app.use(express.json());
-app.use(cors());
 
+// -----------------------------------
 // MongoDB Connection
+// -----------------------------------
 const MONGODB_URI = "mongodb+srv://todo:todo@cluster0.qnzvjav.mongodb.net/";
+
 mongoose
-  .connect(MONGODB_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
+  .connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Routes
+// -----------------------------------
+// SIGNUP API
+// -----------------------------------
+app.post("api/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-app.get("/api/todos", async (req, res) => {
-  const todos = await Todo.find();
-  res.json(todos);
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required!" });
+    }
+
+    // check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists!" });
+    }
+
+    // create new user
+    const newUser = await User.create({ name, email, password });
+
+    res.status(201).json({
+      message: "Signup successful!",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
-app.post("/api/todos", async (req, res) => {
-  const { title } = req.body;
-  if (!title) return res.status(400).json({ message: "title is required" });
-  const todo = await Todo.create({ title });
-  res.status(201).json(todo);
+// -----------------------------------
+// LOGIN API
+// -----------------------------------
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required!" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user || user.password !== password) {
+      return res.status(401).json({ message: "Invalid email or password!" });
+    }
+
+    res.json({
+      message: "Login successful!",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 });
 
-app.put("/api/todos/:id", async (req, res) => {
-  const updated = await Todo.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
-  if (!updated) return res.status(404).json({ message: "Todo not found" });
-  res.json(updated);
-});
-
-app.delete("/api/todos/:id", async (req, res) => {
-  const deleted = await Todo.findByIdAndDelete(req.params.id);
-  if (!deleted) return res.status(404).json({ message: "Todo not found" });
-  res.json({ message: "Todo deleted" });
-});
-
-
+// -----------------------------------
+// ROOT ROUTE
+// -----------------------------------
 app.get("/", (req, res) => {
   res.json({
-    message: "server start",
+    message: "Server started successfully 🚀",
   });
 });
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// -----------------------------------
+// START SERVER
+// -----------------------------------
+app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));

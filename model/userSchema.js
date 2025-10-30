@@ -1,17 +1,25 @@
 import mongoose from "mongoose";
 
-const todoSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
-    title: {
+    name: {
       type: String,
       required: true,
+      trim: true,
     },
-    completed: {
-      type: Boolean,
-      default: false,
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 5,
     },
   },
   { timestamps: true }
 );
 
-export const Todo = mongoose.model("Todo", todoSchema);
+export const User = mongoose.model("User", userSchema);
